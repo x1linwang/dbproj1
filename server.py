@@ -37,15 +37,14 @@ DATABASEURI = "postgresql://xw2767:7210@34.75.150.200/proj1part2"
 #
 engine = create_engine(DATABASEURI)
 
-#
 # Example of running queries in your database
 # Note that this will probably not work if you already have a table named 'test' in your database, containing meaningful data. This is only an example showing you how to run queries in your database using SQLAlchemy.
 #
-engine.execute("""CREATE TABLE IF NOT EXISTS test (
-  id serial,
-  name text
-);""")
-engine.execute("""INSERT INTO test(name) VALUES ('grace hopper'), ('alan turing'), ('ada lovelace');""")
+#engine.execute("""CREATE TABLE IF NOT EXISTS test (
+#  id serial,
+#  name text
+#);""")
+#engine.execute("""INSERT INTO test(name) VALUES ('grace hopper'), ('alan turing'), ('ada lovelace');""")
 
 
 @app.before_request
@@ -89,6 +88,7 @@ def teardown_request(exception):
 # see for routing: http://flask.pocoo.org/docs/0.10/quickstart/#routing
 # see for decorators: http://simeonfranklin.com/blog/2012/jul/1/python-decorators-in-12-steps/
 #
+
 @app.route('/')
 def index():
   """
@@ -108,7 +108,7 @@ def index():
   #
   # example of a database query
   #
-  cursor = g.conn.execute("SELECT name FROM test")
+  cursor = g.conn.execute("SELECT name FROM Restaurant Limit 5")
   names = []
   for result in cursor:
     names.append(result['name'])  # can also be accessed using result[0]
@@ -149,6 +149,28 @@ def index():
   #
   return render_template("index.html", **context)
 
+
+
+
+# locsearch: given a restaurant name, return the location of the Restaurant
+@app.route('/search', methods=['POST'])
+def search():
+    name = request.form['name']
+
+
+    query = text("""SELECT R.name, I.number, I.street, I.city, I.zip
+                    FROM Restaurant R, Is_at_Locations I
+                    WHERE R.name = '{}' AND R.rid = I.rid;
+                    """.format(name))
+    cursor = g.conn.execute(query)
+
+    loc = []
+    for result in cursor:
+        loc.append((result[0],result[1],result[2],result[3],result[4]))
+    cursor.close()
+
+    context = dict(data = loc)
+    return render_template("search.html", **context)
 #
 # This is an example of a different path.  You can see it at:
 #

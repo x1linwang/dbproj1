@@ -108,10 +108,19 @@ def index():
   #
   # example of a database query
   #
-  cursor = g.conn.execute("SELECT name FROM Restaurant Limit 5")
+  cursor = g.conn.execute("""
+                            SELECT R.name, AVG(UR.rating)
+                            FROM Restaurant R, u_writes_for UW, User_Reviews UR
+                            WHERE R.rid = UW.rid
+                            AND UW.urid = UR.urid
+                            GROUP BY R.name
+                            ORDER BY AVG(UR.rating) DESC
+                            LIMIT 10;
+                            """)
   names = []
   for result in cursor:
-    names.append(result['name'])  # can also be accessed using result[0]
+      response = "Name: " + str(result[0]) + ", " + "Average rating: " + str(round(result[1],2)) + "."
+      names.append(response)
   cursor.close()
 
   #
@@ -153,24 +162,180 @@ def index():
 
 
 # locsearch: given a restaurant name, return the location of the Restaurant
-@app.route('/search', methods=['POST'])
-def search():
-    name = request.form['name']
+@app.route('/generalquery', methods=['POST'])
+def generalquery():
+    name = str(request.form['name'])
+
+    info = []
+    info.append(name)
+
+    query = text("""SELECT website, phone, category
+                FROM Restaurant R
+                Where R.name = '{}'
+                """.format(name))
+    cursor = g.conn.execute(query)
 
 
-    query = text("""SELECT R.name, I.number, I.street, I.city, I.zip
+    for result in cursor:
+        for thing in result:
+            info.append(thing)
+    cursor.close
+
+    query = text("""SELECT I.number, I.street, I.city, I.zip
                     FROM Restaurant R, Is_at_Locations I
                     WHERE R.name = '{}' AND R.rid = I.rid;
                     """.format(name))
     cursor = g.conn.execute(query)
 
-    loc = []
     for result in cursor:
-        loc.append((result[0],result[1],result[2],result[3],result[4]))
+        for thing in result:
+            info.append(thing)
     cursor.close()
 
-    context = dict(data = loc)
-    return render_template("search.html", **context)
+    query = text("""SELECT AVG(UR.rating)
+                FROM Restaurant R, u_writes_for UW, User_Reviews UR
+                WHERE R.name = '{}' AND R.rid = UW.rid AND UW.urid = UR.urid
+                """.format(name))
+
+    cursor = g.conn.execute(query)
+
+    for result in cursor:
+        for thing in result:
+            info.append("Average Rating: "+str(round(thing,2)))
+    cursor.close()
+
+    query = text("""SELECT O.type
+        FROM Restaurant R, offers O
+        Where R.name = '{}' AND R.rid = O.rid;
+        """.format(name))
+
+    cursor = g.conn.execute(query)
+
+    for result in cursor:
+        for thing in result:
+            info.append(thing)
+    cursor.close()
+
+    query = text("""SELECT S.name
+                FROM Restaurant R, Satisfies S
+                Where R.name = '{}' AND R.rid = S.rid;
+                """.format(name))
+
+    cursor = g.conn.execute(query)
+
+    for result in cursor:
+        for thing in result:
+            info.append(thing)
+    cursor.close()
+
+    context = dict(data = info)
+    return render_template("query.html", **context)
+
+@app.route('/catquery', methods=['POST'])
+def catquery():
+    cat = str(request.form['cat'])
+    info = []
+    info.append("Top 20 restaurants in category: "+cat)
+
+    query = text("""SELECT R.name
+                FROM Restaurant R, u_writes_for UW, User_Reviews UR
+                WHERE R.category = '{}'
+                AND R.rid = UW.rid
+                AND UW.urid = UR.urid
+                GROUP BY R.name
+                ORDER BY AVG(UR.rating)
+                LIMIT 20;
+                """.format(cat))
+
+    cursor = g.conn.execute(query)
+
+    for result in cursor:
+        info.append(result[0])
+    cursor.close()
+
+    context = dict(data = info)
+
+    return render_template("query.html", **context)
+
+@app.route('/dietaryquery', methods=['POST'])
+def dietaryquery():
+    dietary = str(request.form['dietary'])
+    info = []
+    info.append("Top 20 restaurants that offer "+dietary+" dishes:")
+
+    query = text("""SELECT R.name
+                FROM Restaurant R, u_writes_for UW, User_Reviews UR, Satisfies S
+                WHERE S.name = '{}'
+                AND R.rid = S.rid
+                AND R.rid = UW.rid
+                AND UW.urid = UR.urid
+                GROUP BY R.name
+                ORDER BY AVG(UR.rating)
+                LIMIT 20;
+                """.format(dietary))
+
+    cursor = g.conn.execute(query)
+
+    for result in cursor:
+        info.append(result[0])
+    cursor.close()
+
+    context = dict(data = info)
+
+    return render_template("query.html", **context)
+
+@app.route('/ordertypequery', methods=['POST'])
+def ordertypequery():
+    ordertype = str(request.form['ordertype'])
+    info = []
+    info.append("Top 20 restaurants that offer "+ordertype+" service:")
+
+    query = text("""SELECT R.name
+                FROM Restaurant R, u_writes_for UW, User_Reviews UR, Offers O
+                WHERE O.type = '{}'
+                AND R.rid = O.rid
+                AND R.rid = UW.rid
+                AND UW.urid = UR.urid
+                GROUP BY R.name
+                ORDER BY AVG(UR.rating)
+                LIMIT 20;
+                """.format(ordertype))
+
+    cursor = g.conn.execute(query)
+
+    for result in cursor:
+        info.append(result[0])
+    cursor.close()
+
+    context = dict(data = info)
+
+    return render_template("query.html", **context)
+
+@app.route('/ratingquery', methods=['POST'])
+def ratingquery():
+    rating = float(request.form['rating'])
+    info = []
+    info.append("Restaurants that has rating above "+str(rating)+":")
+
+    query = text("""SELECT R.name
+                FROM Restaurant R, u_writes_for UW, User_Reviews UR
+                WHERE R.rid = UW.rid
+                AND UW.urid = UR.urid
+                GROUP BY R.name
+                HAVING AVG(UR.rating)>{};
+                """.format(rating))
+
+    cursor = g.conn.execute(query)
+
+    for result in cursor:
+        info.append(result[0])
+    cursor.close()
+
+    context = dict(data = info)
+
+    return render_template("query.html", **context)
+
+
 #
 # This is an example of a different path.  You can see it at:
 #
@@ -179,9 +344,9 @@ def search():
 # Notice that the function name is another() rather than index()
 # The functions for each app.route need to have different names
 #
-@app.route('/another')
-def another():
-  return render_template("another.html")
+@app.route('/advquery')
+def advquery():
+  return render_template("advquery.html")
 
 
 # Example of adding new data to the database

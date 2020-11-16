@@ -1,0 +1,45 @@
+<html>
+  <style>
+    body{
+      font-size: 15pt;
+      font-family: arial;
+    }
+  </style>
+
+
+<body>
+  <h1>Advaned Restaurant Query</h1>
+
+  <div>
+    {% for n in data %}
+    <div>{{n}}</div>
+    {% endfor %}
+  </div>
+
+  <form method="POST" action="/generalquery">
+  <p>Find details of a restaurant: <input type="text" name="name"> <input type="submit" value="Go!"></p>
+  </form>
+
+  <form method="POST" action="/catquery">
+  <p>Find all restaurants in this category: <input type="text" name="name"> <input type="submit" value="Go!"></p>
+  </form>
+
+  <form method="POST" action="/dietaryquery">
+  <p>Find all restaurants that satisfy a dietary need: <input type="text" name="name"> <input type="submit" value="Go!"></p>
+  </form>
+
+  <form method="POST" action="/ordertypequery">
+  <p>Find all restaurants that offer this order option: <input type="text" name="name"> <input type="submit" value="Go!"></p>
+  </form>
+
+  <form method="POST" action="/ratingquery">
+  <p>Find all restaurants above this rating: <input type="text" name="name"> <input type="submit" value="Go!"></p>
+  </form>
+
+  <p><a href="/">Back to Home Page</a></p>
+
+
+</body>
+
+
+</html>

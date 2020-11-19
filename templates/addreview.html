@@ -1,0 +1,48 @@
+<html>
+  <head>
+    <title>Xilin and Destinee's website</title>
+  <style>
+    body{
+      font-size: 15pt;
+      font-family: arial;
+    }
+  </style>
+
+
+<body>
+  <ul>
+  <h1>Restaurant Review</h1>
+
+  <p>Write a review for a restaurant below.</p>
+  <p>Reminder: all fields are required and rating must be a number between 0 and 5.</p>
+
+
+  <form method ="POST" action="/addreview">
+    <label for="username">Username:</label><br>
+    <input type="text" id="username" name="username"><br>
+    <label for="User ID">User ID:</label><br>
+    <input type="text" id="User ID" name="UserID", placeholder="Please rememer this"><br>
+    <lable for="restaurant">Restaurant Name:</label><br>
+    <input type="text" id="restaurant" name="restaurant"><br>
+    <label for="rating">rating:</label><br>
+    <input type="number" id="rating" name="rating"><br>
+    <label for="Review Date">Review Date:</label><br>
+    <input type="date" id="Review Date" name="ReviewDate"><br>
+    <label for="Reviews">Reviews:</label><br>
+    <input type="text",id="Reviews", name ="Reviews", placeholder="Write Your reviews here"><br>
+    <input type="submit" value="Submit">
+  </form>
+
+  <p><a href="/">Back to Home Page</a></p>
+  <p><a href="advquery">Advanced Search</a></p>
+
+
+
+
+  </ul>
+
+
+</body>
+
+
+</html>

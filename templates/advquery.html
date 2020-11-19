@@ -16,24 +16,18 @@
     {% endfor %}
   </div>
 
-  <form method="POST" action="/generalquery">
-  <p>Find details of a restaurant: <input type="text" name="name"> <input type="submit" value="Go!"></p>
-  </form>
+  <p></p>
 
-  <form method="POST" action="/catquery">
-  <p>Find all restaurants in this category: <input type="text" name="name"> <input type="submit" value="Go!"></p>
-  </form>
-
-  <form method="POST" action="/dietaryquery">
-  <p>Find all restaurants that satisfy a dietary need: <input type="text" name="name"> <input type="submit" value="Go!"></p>
-  </form>
-
-  <form method="POST" action="/ordertypequery">
-  <p>Find all restaurants that offer this order option: <input type="text" name="name"> <input type="submit" value="Go!"></p>
-  </form>
-
-  <form method="POST" action="/ratingquery">
-  <p>Find all restaurants above this rating: <input type="text" name="name"> <input type="submit" value="Go!"></p>
+  <form method ="POST" action="/morequery">
+    <label for="category">Category:</label><br>
+    <input type="text" id="category" name="category"><br>
+    <label for="rating">Minimum Rating:</label><br>
+    <input type="text" id="rating" name="rating", placeholder="in (0,5) range"><br>
+    <lable for="option">Order Options:</label><br>
+    <input type="text" id="option" name="option"><br>
+    <label for="dietary">Dietary need:</label><br>
+    <input type="text" id="dietary" name="dietary"><br>
+    <input type="submit" value="Submit">
   </form>
 
   <p><a href="/">Back to Home Page</a></p>

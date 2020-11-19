@@ -37,15 +37,6 @@ DATABASEURI = "postgresql://xw2767:7210@34.75.150.200/proj1part2"
 #
 engine = create_engine(DATABASEURI)
 
-# Example of running queries in your database
-# Note that this will probably not work if you already have a table named 'test' in your database, containing meaningful data. This is only an example showing you how to run queries in your database using SQLAlchemy.
-#
-#engine.execute("""CREATE TABLE IF NOT EXISTS test (
-#  id serial,
-#  name text
-#);""")
-#engine.execute("""INSERT INTO test(name) VALUES ('grace hopper'), ('alan turing'), ('ada lovelace');""")
-
 
 @app.before_request
 def before_request():
@@ -161,24 +152,33 @@ def index():
 
 
 
-# locsearch: given a restaurant name, return the location of the Restaurant
+# general query returns everything we have about the restaurant
+# including the contact info, category, location, user rating,
+# order type and special dietary needs it satisfies
+
 @app.route('/generalquery', methods=['POST'])
 def generalquery():
     name = str(request.form['name'])
-
     info = []
-    info.append(name)
 
-    query = text("""SELECT website, phone, category
-                FROM Restaurant R
-                Where R.name = '{}'
+    # this is to check if the restaurant queried is in our database
+    query = text("""SELECT name, website, phone, category
+                FROM Restaurant
+                Where name = '{}'
                 """.format(name))
+
     cursor = g.conn.execute(query)
-
-
-    for result in cursor:
-        for thing in result:
-            info.append(thing)
+    row = cursor.fetchone()
+    if row == None: # retaurant is not in the database, app will show an error page
+        message = "The restaurant you searched for is not in our database. Please check if you typed the name wrong or try searching for another restaurant."
+        info.append(message)
+        context = dict(data = info)
+        return render_template("error.html", **context)
+    else: # otherwise, add the restaurant info to the list
+        info.append(row['name'])
+        info.append(row['website'])
+        info.append(row['phone'])
+        info.append("Categoty: "+str(row['category']))
     cursor.close
 
     query = text("""SELECT I.number, I.street, I.city, I.zip
@@ -187,9 +187,9 @@ def generalquery():
                     """.format(name))
     cursor = g.conn.execute(query)
 
-    for result in cursor:
-        for thing in result:
-            info.append(thing)
+    row = cursor.fetchone()
+    address = "Address: "+str(row['number'])+" "+row['street']+" "+row['city']+" "+str(row['zip'])
+    info.append(address)
     cursor.close()
 
     query = text("""SELECT AVG(UR.rating)
@@ -211,10 +211,13 @@ def generalquery():
 
     cursor = g.conn.execute(query)
 
-    for result in cursor:
-        for thing in result:
-            info.append(thing)
+    orderoption = "Order options: "
+
+    for row in cursor:
+        orderoption += (row['type']+" ")
     cursor.close()
+
+    info.append(orderoption)
 
     query = text("""SELECT S.name
                 FROM Restaurant R, Satisfies S
@@ -223,10 +226,13 @@ def generalquery():
 
     cursor = g.conn.execute(query)
 
-    for result in cursor:
-        for thing in result:
-            info.append(thing)
+    dietaryneed = "Dietary need: "
+
+    for row in cursor:
+        dietaryneed += (row['name']+" ")
     cursor.close()
+
+    info.append(dietaryneed)
 
     context = dict(data = info)
     return render_template("query.html", **context)
@@ -234,7 +240,24 @@ def generalquery():
 @app.route('/catquery', methods=['POST'])
 def catquery():
     cat = str(request.form['cat'])
+
+    query = text("""SELECT R.name
+                FROM Restaurant R
+                WHERE R.category = '{}';
+                """.format(cat))
+    cursor = g.conn.execute(query)
+    row = cursor.fetchone()
     info = []
+
+    if row == None:
+        cursor.close()
+        message1 = "The restaurant categoty '"+cat+"' is not found in our database."
+        message2 = "The only allowed categories for now are: Chinese, Indian, American, Italian, Mexican, Japanese."
+        info.append(message1)
+        info.append(message2)
+        context = dict(data = info)
+        return render_template("error.html", **context)
+
     info.append("Top 20 restaurants in category: "+cat)
 
     query = text("""SELECT R.name
@@ -261,6 +284,27 @@ def catquery():
 def dietaryquery():
     dietary = str(request.form['dietary'])
     info = []
+
+    query = text("""SELECT R.name
+                FROM Restaurant R, Satisfies S
+                WHERE S.name = '{}'
+                AND R.rid = S.rid;
+                """.format(dietary))
+
+    cursor = g.conn.execute(query)
+    row = cursor.fetchone()
+    info = []
+
+    if row == None:
+        cursor.close()
+        message1 = "The dietary need '"+dietary+"' is not found in our database."
+        message2 = "The only dietary needs available for now are: Vegan, Vegetarian, Halal, Gluten Free."
+        info.append(message1)
+        info.append(message2)
+        context = dict(data = info)
+        return render_template("error.html", **context)
+
+
     info.append("Top 20 restaurants that offer "+dietary+" dishes:")
 
     query = text("""SELECT R.name
@@ -288,6 +332,26 @@ def dietaryquery():
 def ordertypequery():
     ordertype = str(request.form['ordertype'])
     info = []
+
+    query = text("""SELECT R.name
+                FROM Restaurant R, offers O
+                WHERE O.type = '{}'
+                AND R.rid = O.rid;
+                """.format(ordertype))
+
+    cursor = g.conn.execute(query)
+    row = cursor.fetchone()
+    info = []
+
+    if row == None:
+        cursor.close()
+        message1 = "The order option '"+ordertype+"' is not found in our database."
+        message2 = "The only order options available for now are: dine-in, take-out, delivery."
+        info.append(message1)
+        info.append(message2)
+        context = dict(data = info)
+        return render_template("error.html", **context)
+
     info.append("Top 20 restaurants that offer "+ordertype+" service:")
 
     query = text("""SELECT R.name
@@ -313,8 +377,20 @@ def ordertypequery():
 
 @app.route('/ratingquery', methods=['POST'])
 def ratingquery():
-    rating = float(request.form['rating'])
     info = []
+    try:
+        rating = float(request.form['rating'])
+    except:
+        message1 = "Rating must be a number between 0 and 5. Please check your input."
+        info.append(message1)
+        context = dict(data = info)
+        return render_template("error.html", **context)
+    if rating < 0  or rating > 5:
+        message1 = "Rating must be a number between 0 and 5. Please check your input."
+        info.append(message1)
+        context = dict(data = info)
+        return render_template("error.html", **context)
+
     info.append("Restaurants that has rating above "+str(rating)+":")
 
     query = text("""SELECT R.name
@@ -335,6 +411,114 @@ def ratingquery():
 
     return render_template("query.html", **context)
 
+@app.route('/resreviewquery', methods=['POST'])
+def resreviewquery():
+    name = str(request.form['name'])
+    info = []
+    linebreak = "--------------------"
+
+    query = text("""Select R.name
+                    From Restaurant R, User_Reviews UR, u_writes_for UW
+                    WHERE R.name = '{}'
+                    AND UW.rid = R.rid
+                    AND UW.urid = UR.urid;
+                """.format(name))
+
+    cursor = g.conn.execute(query)
+    row = cursor.fetchone()
+    info = []
+
+    if row == None:
+        cursor.close()
+        message1 = "The restaurant '"+name+"' is either not in our database or does not have any reviews in our database. Please try searching for something else."
+        info.append(message1)
+        context = dict(data = info)
+        return render_template("error.html", **context)
+
+
+    info.append("User Reviews for "+name+":")
+    info.append(linebreak)
+
+    query = text("""Select R.name, U.name, UW.review_date, UR.rating, UR.detail
+                    From Restaurant R, User_Reviews UR, u_writes_for UW, Users U
+                    WHERE R.name = '{}'
+                    AND U.uid = UW.uid
+                    AND UW.rid = R.rid
+                    AND UW.urid = UR.urid;
+                """.format(name))
+
+    cursor = g.conn.execute(query)
+
+    for result in cursor:
+        message2 = "User name: " + result[1]
+        message3 = "Review date: " + str(result[2]) + "; Rating: "+ str(result[3])
+        message4 = "Review detail: "+ result[4]
+        info.append(message2)
+        info.append(message3)
+        info.append(message4)
+        info.append(linebreak)
+    cursor.close()
+
+    context = dict(data = info)
+
+    return render_template("query.html", **context)
+
+
+
+@app.route('/reviewquery', methods=['POST'])
+def reviewquery():
+    URdetail = str(request.form['URdetail'])
+    info = []
+    linebreak = "--------------------"
+
+    query = text("""Select R.name
+                    From Restaurant R, User_Reviews UR, u_writes_for UW
+                    WHERE UR.detail LIKE '%{}%'
+                    AND UW.rid = R.rid
+                    AND UW.urid = UR.urid;
+                """.format(URdetail))
+
+    cursor = g.conn.execute(query)
+    row = cursor.fetchone()
+    info = []
+
+    if row == None:
+        cursor.close()
+        message1 = "The input '"+URdetail+"' is not found in any reviews in our database. Please try searching for something else."
+        info.append(message1)
+        context = dict(data = info)
+        return render_template("error.html", **context)
+
+    info.append("User Reviews with keyword "+URdetail+":")
+    info.append(linebreak)
+
+    query = text("""Select R.name, U.name, UW.review_date, UR.rating, UR.detail
+                    From Restaurant R, User_Reviews UR, u_writes_for UW, Users U
+                    WHERE UR.detail LIKE '%{}%'
+                    AND U.uid = UW.uid
+                    AND UW.rid = R.rid
+                    AND UW.urid = UR.urid
+                    LIMIT 20;
+                """.format(URdetail))
+
+    cursor = g.conn.execute(query)
+
+    for result in cursor:
+        message1 = "Restaurant name: " + result[0]
+        message2 = "User name: " + result[1]
+        message3 = "Review date: " + str(result[2]) + "; Rating: "+ str(result[3])
+        message4 = "Review detail: "+ result[4]
+        info.append(message1)
+        info.append(message2)
+        info.append(message3)
+        info.append(message4)
+        info.append(linebreak)
+    cursor.close()
+
+    context = dict(data = info)
+
+    return render_template("query.html", **context)
+
 
 #
 # This is an example of a different path.  You can see it at:
@@ -348,19 +532,111 @@ def ratingquery():
 def advquery():
   return render_template("advquery.html")
 
+@app.route('/morequery',methods=['POST'])
+def morequery():
+    cat = str(request.form['category'])
+    rating = float(request.form['rating'])
+    option = str(request.form['option'])
+    need = str(request.form['dietary'])
+    info = []
+
+    info.append("Restaurants that matches your input:")
+
+    query = text("""SELECT R.name
+                FROM Restaurant R, u_writes_for UW, User_Reviews UR, Satisfies S, offers O
+                WHERE R.rid = UW.rid
+                AND UW.urid = UR.urid
+                AND R.rid = S.rid
+                AND S.rid = O.rid
+                AND R.category = '{}'
+                AND S.name =  '{}'
+                AND O.type = '{}'
+                GROUP BY R.name
+                HAVING AVG(UR.rating)>= {};
+                """.format(cat, need, option, rating))
+
+    cursor = g.conn.execute(query)
+
+    for result in cursor:
+        info.append(result["name"])
+    cursor.close()
+
+    context = dict(data = info)
+    return render_template("advquery.html", **context)
+
+@app.route('/review')
+def review():
+  return render_template("addreview.html")
+
 
 # Example of adding new data to the database
-@app.route('/add', methods=['POST'])
-def add():
-  name = request.form['name']
-  g.conn.execute('INSERT INTO test(name) VALUES (%s)', name)
-  return redirect('/')
+# Example of adding new data to the database
 
 
-@app.route('/login')
-def login():
-    abort(401)
-    this_is_never_executed()
+
+@app.route('/addreview', methods=['POST'])
+def addreview():
+    from random import random
+    RID=""
+    UserID = str(request.form['UserID'])
+    username = str(request.form['username'])
+    Reviews = str(request.form['Reviews'])
+    Rdate = request.form['ReviewDate']
+    URID=int(10000*random())
+    rating = int(request.form['rating'])
+    restaurant=str(request.form['restaurant'])
+
+    info = []
+
+    query=text("""SELECT R.rid
+                  FROM Restaurant R
+                  WHERE R.name ILIKE '%{}%';""".format(restaurant))
+    cursor = g.conn.execute(query)
+    row = cursor.fetchone()
+    if row == None:
+        cursor.close()
+        message = "The restaurant you want to review for ({}) is not in our database. Please check if you typed the name wrong or try reviewing for another restaurant.".format(restaurant)
+        info.append(message)
+        context = dict(data = info)
+        return render_template("error.html", **context)
+    else:
+        RID = row['rid']
+
+
+
+    try:
+        g.conn.execute("INSERT INTO Users (uid, name) VALUES('{}', '{}')".format(UserID, username))
+    except:
+        pass
+    try:
+        g.conn.execute("INSERT INTO User_Reviews(urid,rating,detail) VALUES('{}','{}','{}')".format(URID,rating,Reviews))
+    except:
+        message = "Something went wrong, please contact xw2767@columbia.edu to figure out what went wrong:)"
+        info.append(message)
+        context = dict(data = info)
+        return render_template("error.html", **context)
+    try:
+        g.conn.execute('INSERT INTO u_writes_for(uid,urid,rid,review_date) VALUES(%s,%s,%s,%s)',UserID,URID,RID,Rdate)
+    except:
+        message = "Something went wrong, please contact xw2767@columbia.edu to figure out what went wrong:)"
+        info.append(message)
+        context = dict(data = info)
+        return render_template("error.html", **context)
+
+    info = []
+    message1 = "Restaurant name: " + restaurant
+    message2 = "User name: " + username
+    message3 = "Review date: " + Rdate + "; Rating: "+ str(rating)
+    message4 = "Review detail: "+ Reviews
+    info.append(message1)
+    info.append(message2)
+    info.append(message3)
+    info.append(message4)
+
+    context = dict(data = info)
+
+    return render_template("success.html", **context)
+
 
 
 if __name__ == "__main__":

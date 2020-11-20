@@ -37,7 +37,6 @@ DATABASEURI = "postgresql://xw2767:7210@34.75.150.200/proj1part2"
 #
 engine = create_engine(DATABASEURI)
 
-
 @app.before_request
 def before_request():
   """
@@ -677,9 +676,10 @@ def addreview():
 
     query=text("""SELECT R.rid
                   FROM Restaurant R
-                  WHERE R.name ILIKE '%{}%';""".format(restaurant))
+                  WHERE R.name = '{}';""".format(restaurant))
     cursor = g.conn.execute(query)
     row = cursor.fetchone()
+
     if row == None:
         cursor.close()
         message = "The restaurant you want to review for ({}) is not in our database. Please check if you typed the name wrong or try reviewing for another restaurant.".format(restaurant)

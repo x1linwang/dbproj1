@@ -535,10 +535,79 @@ def advquery():
 @app.route('/morequery',methods=['POST'])
 def morequery():
     cat = str(request.form['category'])
-    rating = float(request.form['rating'])
     option = str(request.form['option'])
     need = str(request.form['dietary'])
     info = []
+
+    try:
+        rating = float(request.form['rating'])
+    except:
+        message1 = "Rating must be a number between 0 and 5. Please check your input."
+        info.append(message1)
+        context = dict(data = info)
+        return render_template("error.html", **context)
+    if rating < 0  or rating > 5:
+        message1 = "Rating must be a number between 0 and 5. Please check your input."
+        info.append(message1)
+        context = dict(data = info)
+        return render_template("error.html", **context)
+
+
+    query = text("""SELECT R.name
+                FROM Restaurant R, offers O
+                WHERE O.type = '{}'
+                AND R.rid = O.rid;
+                """.format(option))
+
+    cursor = g.conn.execute(query)
+    row = cursor.fetchone()
+    info = []
+
+    if row == None:
+        cursor.close()
+        message1 = "The order option '"+option+"' is not found in our database."
+        message2 = "The only order options available for now are: dine-in, take-out, delivery."
+        info.append(message1)
+        info.append(message2)
+        context = dict(data = info)
+        return render_template("error.html", **context)
+
+
+    query = text("""SELECT R.name
+                FROM Restaurant R, Satisfies S
+                WHERE S.name = '{}'
+                AND R.rid = S.rid;
+                """.format(need))
+
+    cursor = g.conn.execute(query)
+    row = cursor.fetchone()
+
+    if row == None:
+        cursor.close()
+        message1 = "The dietary need '"+need+"' is not found in our database."
+        message2 = "The only dietary needs available for now are: Vegan, Vegetarian, Halal, Gluten Free."
+        info.append(message1)
+        info.append(message2)
+        context = dict(data = info)
+        return render_template("error.html", **context)
+
+
+    query = text("""SELECT R.name
+                FROM Restaurant R
+                WHERE R.category = '{}';
+                """.format(cat))
+    cursor = g.conn.execute(query)
+    row = cursor.fetchone()
+    info = []
+
+    if row == None:
+        cursor.close()
+        message1 = "The restaurant categoty '"+cat+"' is not found in our database."
+        message2 = "The only allowed categories for now are: Chinese, Indian, American, Italian, Mexican, Japanese."
+        info.append(message1)
+        info.append(message2)
+        context = dict(data = info)
+        return render_template("error.html", **context)
 
     info.append("Restaurants that matches your input:")
 
@@ -583,10 +652,28 @@ def addreview():
     Reviews = str(request.form['Reviews'])
     Rdate = request.form['ReviewDate']
     URID=int(10000*random())
-    rating = int(request.form['rating'])
     restaurant=str(request.form['restaurant'])
 
     info = []
+
+    if UserID == "":
+        message1 = "UserID field cannot be empty, please check your input!"
+        info.append(message1)
+        context = dict(data = info)
+        return render_template("error.html", **context)
+
+    try:
+        rating = int(request.form['rating'])
+    except:
+        message1 = "Rating must be a number between 0 and 5. Please check your input."
+        info.append(message1)
+        context = dict(data = info)
+        return render_template("error.html", **context)
+    if rating < 0  or rating > 5:
+        message1 = "Rating must be a number between 0 and 5. Please check your input."
+        info.append(message1)
+        context = dict(data = info)
+        return render_template("error.html", **context)
 
     query=text("""SELECT R.rid
                   FROM Restaurant R
@@ -601,8 +688,6 @@ def addreview():
         return render_template("error.html", **context)
     else:
         RID = row['rid']
-
-
 
     try:
         g.conn.execute("INSERT INTO Users (uid, name) VALUES('{}', '{}')".format(UserID, username))

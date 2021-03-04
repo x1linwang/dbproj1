@@ -7,7 +7,7 @@ In the project, we designed the database, populated it with realistic data, and 
 
 ## Code organization
 
-The project is split into three parts: part 1 which includes the proposal and ER diagram for the database, part 2 which includes the SQL schema, web-scraping scripts that were used to get real/realistic data that populates the database, and some interesting queries, part 3 which includes the web front end that allow users to perform queries on the database without the need to write any SQL commands.
+The project is split into three parts: part 1 which includes the proposal and ER diagram for the database, part 2 which includes the SQL schema, web-scraping scripts that were used to get real/realistic data that populates the database, and some interesting queries, part 3 which includes the web front end that allows users to perform queries on the database without writing any SQL commands themselves.
 
 * [./docs/Part_1.pdf](./docs/Part_1.pdf) gives the proposal of this project which includes the overall design of the database, the source of data that we plan to use to populate the database, the expected user interaction, and a contingency plan.
 * [Webscraping_SQL_Queries.ipynb](Webscraping_SQL_Queries.ipynb) is the python script that gets data using the google place api, and convert the parsed data into SQL insertion commands.

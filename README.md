@@ -68,6 +68,8 @@ In the advanced search page [./templates/advquery.html](./templates/advquery.htm
 
 Also, [./templates/index.html](./templates/index.html) has an interesting function that can do a database operation that query restaurant reviews containing certain text. The function created in [server.py](server.py) gives the detailed database operations using engine and sql query. Then [./templates/query.html](./templates/Query.html) displays the results from the database operations conducted by server.py.
 
-## Result
+## Result and Project Expansion
 
-The project was graded <b>99.5/100</b> which is one of the highest scores in class. We are quite satisfied with the result. In second half of the class, we expanded our project [./docs/Expansion.pdf](./docs/Expansion.pdf) by adding a composite type "event" and a trigger to enforce the total participation constraints. We also explored more topics in database systems such as query optimization. 
+The project was graded <b>99.5/100</b> which is one of the highest scores in class. We are quite satisfied with the result. 
+
+In second half of the class, we expanded our project [./docs/Expansion.pdf](./docs/Expansion.pdf) by adding a composite type "event" and a trigger to enforce the total participation constraints. We also explored more topics in database systems such as query optimization. 

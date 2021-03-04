@@ -21,7 +21,7 @@ The project is split into three parts: part 1 which includes the proposal and ER
 
 ### ER Diagram
 
-<img src="./docs/ER_Diagram.png" width=600 />
+<img src="./docs/ER_Diagram.png" width=800 />
 
 ### Getting data using the google api
 

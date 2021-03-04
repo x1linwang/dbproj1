@@ -1,7 +1,8 @@
 
 <img src="./docs/columbia-cs-logo.png" width=300 />
 
-This project is for CS4111 Introduction to Databases (Fall 2020).
+This project is for CS4111 Introduction to Databases (Fall 2020) at Columbia University.
+
 In the project, we designed the database, populated it with realistic data, and built a web front-end where users can perform complex queries.
 
 ## Code organization

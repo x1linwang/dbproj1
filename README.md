@@ -66,7 +66,7 @@ Each order option shows no different commission fees (this is for the option of 
 
 In the advanced search page [./templates/advquery.html](./templates/advquery.html), user can search for restaurants with multiple constraints. For instance, they can search for all Japanese restaurants that offer take-out and Vegan dishes that also have ratings above 4. 
 
-Also, [./templates/index.html](./templates/index.html) has an interesting function that can do a database operation that query restaurant reviews containing certain text. The function created in [server.py](server.py) gives the detailed database operations using engine and sql query. Then [./templates/query.html](./templates/Query.html) displays the results from the database operations conducted by server.py.
+Also, [./templates/index.html](./templates/index.html) has an interesting function that can do a database operation that query restaurant reviews containing certain text. The function created in [server.py](server.py) gives the detailed database operations using engine and sql query. Then [./templates/query.html](./templates/query.html) displays the results from the database operations conducted by server.py.
 
 ## Result and Project Expansion
 
